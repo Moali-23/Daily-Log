@@ -1,0 +1,99 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+  --accent: 34 211 238; /* cyan-400 */
+  --accent-2: 168 85 247; /* purple-500 */
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  background: #07080b;
+}
+
+body {
+  font-family: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: #e5e7eb;
+  overscroll-behavior-y: none;
+}
+
+/* Hide scrollbar for utility containers */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Subtle scrollbar globally */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* Glass card */
+.glass {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.03) 0%,
+    rgba(255, 255, 255, 0.015) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(8px);
+}
+
+/* Gradient text */
+.text-gradient {
+  background: linear-gradient(90deg, #67e8f9 0%, #a78bfa 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Mono digits for stats */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Reduce motion class — set on <html data-reduce-motion="true"> */
+[data-reduce-motion="true"] *,
+[data-reduce-motion="true"] *::before,
+[data-reduce-motion="true"] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* Background ambience */
+.app-bg {
+  background:
+    radial-gradient(1200px 600px at 80% -200px, rgba(34, 211, 238, 0.06), transparent 60%),
+    radial-gradient(900px 500px at -200px 100%, rgba(168, 85, 247, 0.05), transparent 60%),
+    #07080b;
+}
+
+/* Focus ring */
+:focus-visible {
+  outline: 2px solid rgb(var(--accent) / 0.6);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
