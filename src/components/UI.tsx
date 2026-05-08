@@ -168,7 +168,7 @@ export function XPBar({
       </div>
       <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
         <motion.div
-          className="h-full rounded-full bg-gradient-to-r from-cyan-400 via-sky-400 to-violet-500"
+          className="h-full rounded-full gradient-accent"
           initial={{ width: 0 }}
           animate={{ width: `${pct}%` }}
           transition={{ duration: 0.9, ease: "easeOut" }}
@@ -363,7 +363,7 @@ export function Btn({
     ghost:
       "bg-white/5 hover:bg-white/10 text-zinc-100 border border-white/10",
     primary:
-      "bg-gradient-to-r from-cyan-400/90 to-sky-500/90 hover:from-cyan-300 hover:to-sky-400 text-zinc-950 border border-cyan-300/40 shadow-glow font-semibold",
+      "gradient-accent hover:brightness-110 text-zinc-950 border border-accent-soft shadow-accent font-semibold",
     danger:
       "bg-rose-500/10 hover:bg-rose-500/15 text-rose-300 border border-rose-500/30",
   };

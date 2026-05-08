@@ -40,6 +40,7 @@ import {
   StreakChip,
   XPBar,
 } from "../components/UI";
+import { accentHex } from "../theme";
 
 const STAT_LABELS: { key: keyof ReturnType<typeof calculateStatSheet>; label: string; color: string }[] = [
   { key: "STR", label: "STR", color: "from-rose-400 to-rose-500" },
@@ -105,10 +106,14 @@ export function StatusPage({ api }: { api: ReturnType<typeof useAppState> }) {
   return (
     <>
       <div className="grid md:grid-cols-[1.1fr_1fr] gap-4 mb-5">
-        <Card className="p-5 sm:p-6 relative overflow-hidden">
+        <Card className="p-5 sm:p-6 relative overflow-hidden glass-lift">
           <div
-            className="absolute -top-16 -right-16 w-56 h-56 rounded-full opacity-30 blur-3xl"
-            style={{ background: "radial-gradient(closest-side, rgba(168,85,247,0.5), transparent)" }}
+            className="absolute -top-16 -right-16 w-56 h-56 rounded-full opacity-40 blur-3xl"
+            style={{ background: "radial-gradient(closest-side, rgb(var(--accent-2) / 0.5), transparent)" }}
+          />
+          <div
+            className="absolute -bottom-12 -left-12 w-44 h-44 rounded-full opacity-30 blur-3xl"
+            style={{ background: "radial-gradient(closest-side, rgb(var(--accent) / 0.45), transparent)" }}
           />
           <div className="text-[10px] uppercase tracking-widest text-zinc-500">Stat Sheet</div>
           <div className="mt-1 flex items-end gap-3">
@@ -118,7 +123,7 @@ export function StatusPage({ api }: { api: ReturnType<typeof useAppState> }) {
             </div>
           </div>
           <div className="mt-2 flex items-center gap-2 text-sm">
-            <span className="px-2 py-0.5 rounded-md bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 text-[11px] font-semibold tracking-wider uppercase">
+            <span className="px-2 py-0.5 rounded-md bg-accent-soft text-accent border border-accent-soft text-[11px] font-semibold tracking-wider uppercase">
               {rank.code} · {rank.title}
             </span>
             {nextRank && (
@@ -215,7 +220,7 @@ export function StatusPage({ api }: { api: ReturnType<typeof useAppState> }) {
                 }}
                 cursor={{ fill: "rgba(255,255,255,0.04)" }}
               />
-              <Bar dataKey="pct" radius={[6, 6, 0, 0]} fill="#22d3ee" />
+              <Bar dataKey="pct" radius={[6, 6, 0, 0]} fill={accentHex(state.user.accent)} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -231,10 +236,10 @@ export function StatusPage({ api }: { api: ReturnType<typeof useAppState> }) {
               <PolarRadiusAxis stroke="rgba(255,255,255,0.15)" tick={false} domain={[0, 100]} />
               <Radar
                 dataKey="pct"
-                stroke="#22d3ee"
+                stroke={accentHex(state.user.accent)}
                 strokeWidth={2}
-                fill="#22d3ee"
-                fillOpacity={0.18}
+                fill={accentHex(state.user.accent)}
+                fillOpacity={0.22}
               />
               <Tooltip
                 contentStyle={{
@@ -286,9 +291,9 @@ export function StatusPage({ api }: { api: ReturnType<typeof useAppState> }) {
             return (
               <div
                 key={r.code}
-                className={`flex items-center justify-between px-3 py-2 rounded-xl border ${
+                className={`flex items-center justify-between px-3 py-2 rounded-xl border transition ${
                   reached
-                    ? "bg-cyan-500/5 border-cyan-500/20"
+                    ? "bg-accent-faint border-accent-soft shadow-glow"
                     : "bg-white/[0.02] border-white/5"
                 }`}
               >
@@ -296,7 +301,7 @@ export function StatusPage({ api }: { api: ReturnType<typeof useAppState> }) {
                   <span
                     className={`w-7 h-7 rounded-md grid place-items-center text-[11px] font-bold tracking-wider ${
                       reached
-                        ? "bg-cyan-500/15 text-cyan-300 border border-cyan-500/30"
+                        ? "bg-accent-soft text-accent border border-accent-soft"
                         : "bg-white/5 text-zinc-500 border border-white/5"
                     }`}
                   >

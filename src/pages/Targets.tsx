@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useAppState } from "../state";
 import type { Goal } from "../types";
 import { Btn, Card, SectionHeader } from "../components/UI";
-import { Modal } from "../components/Modals";
+import { ConfirmDialog, Modal } from "../components/Modals";
 
 const ACCENTS: Record<string, { from: string; to: string; chip: string; text: string; ring: string }> = {
   violet: {
@@ -47,6 +47,8 @@ export function TargetsPage({ api }: { api: ReturnType<typeof useAppState> }) {
   const { state, upsertGoal, removeGoal } = api;
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<Goal | null>(null);
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const confirmingGoal = state.goals.find((g) => g.id === confirmingId) ?? null;
 
   function newGoal() {
     setDraft({
@@ -127,9 +129,9 @@ export function TargetsPage({ api }: { api: ReturnType<typeof useAppState> }) {
                       Edit
                     </button>
                     <button
-                      onClick={() => removeGoal(g.id)}
-                      className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/15 text-rose-300 border border-rose-500/20"
-                      aria-label="Delete"
+                      onClick={() => setConfirmingId(g.id)}
+                      className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/15 text-rose-300 border border-rose-500/20 transition active:scale-95"
+                      aria-label="Delete target"
                     >
                       <Trash2 size={14} />
                     </button>
@@ -225,8 +227,33 @@ export function TargetsPage({ api }: { api: ReturnType<typeof useAppState> }) {
             Save target
           </Btn>
         </div>
-        <style>{`.input{width:100%;border-radius:0.75rem;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);padding:0.5rem 0.75rem;color:#e5e7eb;font-size:0.875rem;outline:none}.input:focus{border-color:rgba(34,211,238,0.4)}`}</style>
+        <style>{`.input{width:100%;border-radius:0.75rem;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);padding:0.5rem 0.75rem;color:#e5e7eb;font-size:0.875rem;outline:none}.input:focus{border-color:rgb(var(--accent) / 0.5)}`}</style>
       </Modal>
+
+      <ConfirmDialog
+        open={!!confirmingGoal}
+        title="Delete this target?"
+        message={
+          confirmingGoal ? (
+            <>
+              You're about to remove{" "}
+              <span className="font-semibold text-zinc-200">
+                {confirmingGoal.title || "this goal"}
+              </span>
+              . This cannot be undone, but you can always add it back later.
+            </>
+          ) : (
+            "This cannot be undone."
+          )
+        }
+        confirmLabel="Delete target"
+        variant="danger"
+        onCancel={() => setConfirmingId(null)}
+        onConfirm={() => {
+          if (confirmingId) removeGoal(confirmingId);
+          setConfirmingId(null);
+        }}
+      />
     </>
   );
 }

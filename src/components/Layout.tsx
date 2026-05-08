@@ -73,9 +73,9 @@ export function AppShell({
   return (
     <div className="app-bg min-h-screen text-zinc-100">
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex md:w-64 lg:w-72 fixed left-0 top-0 bottom-0 flex-col border-r border-white/5 bg-black/20 backdrop-blur-md p-4 z-30">
+      <aside className="hidden md:flex md:w-64 lg:w-72 fixed left-0 top-0 bottom-0 flex-col border-r border-white/5 bg-black/30 backdrop-blur-md p-4 z-30">
         <div className="px-2 mb-6 mt-1 flex items-center gap-2">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-400 to-violet-500 grid place-items-center text-zinc-950">
+          <div className="w-9 h-9 rounded-xl gradient-accent grid place-items-center text-zinc-950 shadow-accent">
             <Zap size={18} strokeWidth={2.5} />
           </div>
           <div>
@@ -89,33 +89,46 @@ export function AppShell({
         </div>
 
         <nav className="flex flex-col gap-1">
-          {NAV_ITEMS.map((item) => (
-            <button
-              key={item.key}
-              onClick={() => onNavigate(item.key)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition border ${
-                active === item.key
-                  ? "bg-white/5 border-white/10 text-zinc-100 shadow-glow"
-                  : "border-transparent text-zinc-400 hover:text-zinc-100 hover:bg-white/5"
-              }`}
-            >
-              <span className={active === item.key ? "text-cyan-300" : ""}>
-                {item.icon}
-              </span>
-              <span className="font-medium">{item.label}</span>
-              {active === item.key && (
-                <span className="ml-auto w-1.5 h-1.5 rounded-full bg-cyan-400" />
-              )}
-            </button>
-          ))}
+          {NAV_ITEMS.map((item) => {
+            const isActive = active === item.key;
+            return (
+              <button
+                key={item.key}
+                onClick={() => onNavigate(item.key)}
+                className={`relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition border ${
+                  isActive
+                    ? "bg-white/[0.04] border-accent-soft text-zinc-100 shadow-glow"
+                    : "border-transparent text-zinc-400 hover:text-zinc-100 hover:bg-white/5"
+                }`}
+              >
+                {isActive && (
+                  <motion.span
+                    layoutId="sidebar-active-pill"
+                    className="absolute inset-0 rounded-xl gradient-accent-soft pointer-events-none"
+                  />
+                )}
+                <span
+                  className={`relative ${
+                    isActive ? "text-accent" : ""
+                  }`}
+                >
+                  {item.icon}
+                </span>
+                <span className="font-medium relative">{item.label}</span>
+                {isActive && (
+                  <span className="ml-auto w-1.5 h-1.5 rounded-full bg-accent shadow-accent relative" />
+                )}
+              </button>
+            );
+          })}
         </nav>
 
-        <div className="mt-auto p-3 rounded-2xl glass">
+        <div className="mt-auto p-3 rounded-2xl glass-lift">
           <div className="flex items-center justify-between mb-2">
             <span className="text-[10px] uppercase tracking-widest text-zinc-500">
               {state.user.displayName}
             </span>
-            <span className="text-[10px] uppercase tracking-widest text-cyan-300">
+            <span className="text-[10px] uppercase tracking-widest text-accent">
               {rank.code} · {rank.title}
             </span>
           </div>
@@ -133,9 +146,9 @@ export function AppShell({
       </aside>
 
       {/* Mobile top header */}
-      <div className="md:hidden sticky top-0 z-30 bg-black/50 backdrop-blur-xl border-b border-white/5 pt-[env(safe-area-inset-top)]">
+      <div className="md:hidden sticky top-0 z-30 bg-black/60 backdrop-blur-xl border-b border-white/5 pt-[env(safe-area-inset-top)]">
         <div className="px-4 py-3 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-400 to-violet-500 grid place-items-center text-zinc-950">
+          <div className="w-9 h-9 rounded-xl gradient-accent grid place-items-center text-zinc-950 shadow-accent">
             <Zap size={16} strokeWidth={2.5} />
           </div>
           <div className="min-w-0 flex-1">
@@ -147,7 +160,7 @@ export function AppShell({
             </div>
           </div>
           <div className="text-right">
-            <div className="text-[10px] tracking-widest text-cyan-300 uppercase">
+            <div className="text-[10px] tracking-widest text-accent uppercase">
               {rank.code} · {rank.title}
             </div>
             <div className="text-[11px] tabular text-zinc-300">
@@ -200,37 +213,40 @@ export function AppShell({
       </main>
 
       {/* Mobile bottom nav */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-black/70 backdrop-blur-xl border-t border-white/5 pb-[env(safe-area-inset-bottom)]">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-black/75 backdrop-blur-xl border-t border-white/5 pb-[env(safe-area-inset-bottom)]">
         <div className="grid grid-cols-6">
-          {NAV_ITEMS.map((item) => (
-            <button
-              key={item.key}
-              onClick={() => onNavigate(item.key)}
-              aria-label={item.label}
-              className="relative flex flex-col items-center gap-0.5 py-2.5"
-            >
-              <span
-                className={`${
-                  active === item.key ? "text-cyan-300" : "text-zinc-500"
-                }`}
+          {NAV_ITEMS.map((item) => {
+            const isActive = active === item.key;
+            return (
+              <button
+                key={item.key}
+                onClick={() => onNavigate(item.key)}
+                aria-label={item.label}
+                className="relative flex flex-col items-center gap-0.5 py-2.5"
               >
-                {item.icon}
-              </span>
-              <span
-                className={`text-[10px] tracking-wide ${
-                  active === item.key ? "text-cyan-300 font-semibold" : "text-zinc-500"
-                }`}
-              >
-                {item.label}
-              </span>
-              {active === item.key && (
-                <motion.span
-                  layoutId="bottom-nav-active"
-                  className="absolute -top-px left-1/2 -translate-x-1/2 w-8 h-[2px] rounded-full bg-cyan-400"
-                />
-              )}
-            </button>
-          ))}
+                <span
+                  className={
+                    isActive ? "text-accent" : "text-zinc-500"
+                  }
+                >
+                  {item.icon}
+                </span>
+                <span
+                  className={`text-[10px] tracking-wide ${
+                    isActive ? "text-accent font-semibold" : "text-zinc-500"
+                  }`}
+                >
+                  {item.label}
+                </span>
+                {isActive && (
+                  <motion.span
+                    layoutId="bottom-nav-active"
+                    className="absolute -top-px left-1/2 -translate-x-1/2 w-8 h-[2px] rounded-full bg-accent shadow-accent"
+                  />
+                )}
+              </button>
+            );
+          })}
         </div>
       </nav>
     </div>

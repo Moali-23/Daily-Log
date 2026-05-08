@@ -1,3 +1,4 @@
+import { MotionConfig } from "framer-motion";
 import { useEffect, useState } from "react";
 import { AppShell, type PageKey } from "./components/Layout";
 import { useAppState } from "./state";
@@ -10,6 +11,7 @@ import { TargetsPage } from "./pages/Targets";
 import { SettingsPage } from "./pages/Settings";
 import { LoginPage } from "./pages/Login";
 import { Zap } from "lucide-react";
+import { applyAccent } from "./theme";
 
 const ROUTE_KEY = "ascend.route";
 
@@ -29,31 +31,42 @@ export default function App() {
     } catch {}
   }, [page]);
 
-  // Apply reduced-motion preference on mount
+  // Apply reduced-motion preference + accent live
   useEffect(() => {
-    document.documentElement.dataset.reduceMotion = api.state.user.reducedMotion ? "true" : "false";
+    document.documentElement.dataset.reduceMotion = api.state.user.reducedMotion
+      ? "true"
+      : "false";
   }, [api.state.user.reducedMotion]);
 
-  // 1) Auth still loading — splash
+  useEffect(() => {
+    applyAccent(api.state.user.accent);
+  }, [api.state.user.accent]);
+
+  // Auth still loading — splash
   if (authApi.isFirebaseConfigured && authApi.loading) {
     return <Splash />;
   }
 
-  // 2) Not authenticated (or Firebase not configured) — Login page
+  // Not authenticated — Login page
   if (!authApi.user) {
-    return <LoginPage auth={authApi} />;
+    return (
+      <MotionConfig reducedMotion="user">
+        <LoginPage auth={authApi} />
+      </MotionConfig>
+    );
   }
 
-  // 3) Authenticated — full app
   return (
-    <AppShell active={page} onNavigate={setPage} api={api}>
-      {page === "today" && <TodayPage api={api} />}
-      {page === "status" && <StatusPage api={api} />}
-      {page === "gym" && <GymLogPage api={api} />}
-      {page === "calendar" && <CalendarPage api={api} />}
-      {page === "targets" && <TargetsPage api={api} />}
-      {page === "settings" && <SettingsPage api={api} authApi={authApi} />}
-    </AppShell>
+    <MotionConfig reducedMotion={api.state.user.reducedMotion ? "always" : "user"}>
+      <AppShell active={page} onNavigate={setPage} api={api}>
+        {page === "today" && <TodayPage api={api} />}
+        {page === "status" && <StatusPage api={api} />}
+        {page === "gym" && <GymLogPage api={api} />}
+        {page === "calendar" && <CalendarPage api={api} />}
+        {page === "targets" && <TargetsPage api={api} />}
+        {page === "settings" && <SettingsPage api={api} authApi={authApi} />}
+      </AppShell>
+    </MotionConfig>
   );
 }
 
@@ -61,7 +74,9 @@ function Splash() {
   return (
     <div className="min-h-screen app-bg flex items-center justify-center">
       <div className="flex flex-col items-center gap-3">
-        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-400 to-violet-500 grid place-items-center text-zinc-950 animate-pulseSoft">
+        <div
+          className="w-12 h-12 rounded-2xl gradient-accent grid place-items-center text-zinc-950 animate-pulseSoft"
+        >
           <Zap size={22} strokeWidth={2.5} />
         </div>
         <div className="text-[11px] uppercase tracking-widest text-zinc-500">

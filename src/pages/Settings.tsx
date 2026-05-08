@@ -1,16 +1,19 @@
-import { CheckCircle2, Cloud, CloudOff, Download, LogOut, RefreshCw, Upload } from "lucide-react";
+import { Check, CheckCircle2, Cloud, CloudOff, Download, LogOut, RefreshCw, Upload } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useAppState } from "../state";
 import { Btn, Card, SectionHeader } from "../components/UI";
+import { ConfirmDialog } from "../components/Modals";
 import type { AuthApi } from "../auth";
+import { ACCENTS as ACCENT_THEME } from "../theme";
+import type { AccentKey } from "../theme";
 
-const ACCENTS: { key: any; label: string; color: string }[] = [
-  { key: "cyan", label: "Cyan", color: "#22d3ee" },
-  { key: "violet", label: "Violet", color: "#a78bfa" },
-  { key: "emerald", label: "Emerald", color: "#34d399" },
-  { key: "amber", label: "Amber", color: "#f59e0b" },
-  { key: "rose", label: "Rose", color: "#fb7185" },
-];
+const ACCENT_LIST: { key: AccentKey; label: string; color: string }[] = (
+  Object.keys(ACCENT_THEME) as AccentKey[]
+).map((k) => ({
+  key: k,
+  label: ACCENT_THEME[k].label,
+  color: ACCENT_THEME[k].hex,
+}));
 
 export function SettingsPage({
   api,
@@ -21,6 +24,7 @@ export function SettingsPage({
 }) {
   const { state, updateUser, resetDemo, exportJSON, importJSON, syncing } = api;
   const [importMsg, setImportMsg] = useState("");
+  const [confirmReset, setConfirmReset] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -130,43 +134,71 @@ export function SettingsPage({
       <Card className="p-5 mb-5">
         <div className="grid sm:grid-cols-2 gap-4">
           <Field label="Accent colour">
-            <div className="flex gap-2">
-              {ACCENTS.map((a) => (
-                <button
-                  key={a.key}
-                  onClick={() => updateUser({ accent: a.key })}
-                  className={`w-9 h-9 rounded-xl border transition active:scale-95 ${
-                    state.user.accent === a.key ? "border-white/40 ring-2 ring-white/10" : "border-white/10"
-                  }`}
-                  style={{ background: `${a.color}30` }}
-                  aria-label={a.label}
-                >
-                  <span className="block w-full h-full rounded-[10px]" style={{ background: a.color }} />
-                </button>
-              ))}
+            <div className="flex flex-wrap gap-2">
+              {ACCENT_LIST.map((a) => {
+                const active = state.user.accent === a.key;
+                return (
+                  <button
+                    key={a.key}
+                    onClick={() => updateUser({ accent: a.key })}
+                    className={`relative w-11 h-11 rounded-xl border transition active:scale-95 group ${
+                      active
+                        ? "border-white/50 shadow-accent-strong"
+                        : "border-white/10 hover:border-white/25"
+                    }`}
+                    style={{
+                      background: `linear-gradient(135deg, ${a.color}40, ${a.color}10)`,
+                    }}
+                    aria-label={`${a.label} accent`}
+                    aria-pressed={active}
+                  >
+                    <span
+                      className="absolute inset-1 rounded-lg"
+                      style={{ background: a.color }}
+                    />
+                    {active && (
+                      <span className="absolute inset-0 grid place-items-center text-zinc-950">
+                        <Check size={16} strokeWidth={3} />
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
             <div className="text-[11px] text-zinc-500 mt-2">
-              The accent is used on key UI highlights.
+              Accent updates the entire app instantly — buttons, navigation, glows
+              and gradients all follow it.
             </div>
           </Field>
           <Field label="Reduce motion">
-            <label className="flex items-center gap-3 cursor-pointer select-none">
+            <button
+              type="button"
+              role="switch"
+              aria-checked={state.user.reducedMotion}
+              onClick={() =>
+                updateUser({ reducedMotion: !state.user.reducedMotion })
+              }
+              className="flex items-center gap-3 cursor-pointer select-none"
+            >
               <span
-                onClick={() => updateUser({ reducedMotion: !state.user.reducedMotion })}
                 className={`relative w-11 h-6 rounded-full transition ${
-                  state.user.reducedMotion ? "bg-cyan-500/40" : "bg-white/10"
+                  state.user.reducedMotion ? "bg-accent-soft border border-accent-soft" : "bg-white/10 border border-white/10"
                 }`}
               >
                 <span
-                  className={`absolute top-0.5 ${
-                    state.user.reducedMotion ? "left-5" : "left-0.5"
-                  } w-5 h-5 rounded-full bg-white transition-all`}
+                  className={`absolute top-0.5 transition-all w-5 h-5 rounded-full ${
+                    state.user.reducedMotion
+                      ? "left-5 bg-accent shadow-accent"
+                      : "left-0.5 bg-white"
+                  }`}
                 />
               </span>
               <span className="text-sm text-zinc-300">
-                {state.user.reducedMotion ? "Animations reduced" : "Smooth animations on"}
+                {state.user.reducedMotion
+                  ? "Reduced motion · animations minimised"
+                  : "Smooth animations · on"}
               </span>
-            </label>
+            </button>
           </Field>
         </div>
       </Card>
@@ -187,9 +219,11 @@ export function SettingsPage({
             onChange={onFile}
             className="hidden"
           />
-          <Btn variant="danger" icon={<RefreshCw size={14} />} onClick={() => {
-            if (window.confirm("Reset all data? This cannot be undone.")) resetDemo();
-          }}>
+          <Btn
+            variant="danger"
+            icon={<RefreshCw size={14} />}
+            onClick={() => setConfirmReset(true)}
+          >
             Reset data
           </Btn>
         </div>
@@ -210,7 +244,26 @@ export function SettingsPage({
         </div>
       </Card>
 
-      <style>{`.input{width:100%;border-radius:0.75rem;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);padding:0.5rem 0.75rem;color:#e5e7eb;font-size:0.875rem;outline:none}.input:focus{border-color:rgba(34,211,238,0.4)}`}</style>
+      <ConfirmDialog
+        open={confirmReset}
+        title="Reset all data?"
+        message={
+          <>
+            This wipes your records, custom tasks, goals, achievements and
+            streaks. <span className="text-rose-300">It cannot be undone.</span>{" "}
+            Consider exporting JSON first.
+          </>
+        }
+        confirmLabel="Reset everything"
+        variant="danger"
+        onCancel={() => setConfirmReset(false)}
+        onConfirm={() => {
+          resetDemo();
+          setConfirmReset(false);
+        }}
+      />
+
+      <style>{`.input{width:100%;border-radius:0.75rem;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);padding:0.5rem 0.75rem;color:#e5e7eb;font-size:0.875rem;outline:none}.input:focus{border-color:rgb(var(--accent) / 0.5)}`}</style>
     </>
   );
 }

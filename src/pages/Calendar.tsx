@@ -108,9 +108,9 @@ export function CalendarPage({ api }: { api: ReturnType<typeof useAppState> }) {
               <button
                 key={idx}
                 onClick={() => setSelected(d.iso!)}
-                className={`relative aspect-square rounded-xl border px-1 py-1 sm:py-2 flex flex-col items-center justify-center transition active:scale-95 ${
+                className={`relative aspect-square rounded-xl border px-1 py-1 sm:py-2 flex flex-col items-center justify-center transition active:scale-95 hover:bg-white/[0.04] ${
                   d.iso === today
-                    ? "border-cyan-400/60 shadow-[0_0_22px_-6px_rgba(34,211,238,0.5)]"
+                    ? "border-accent-strong shadow-accent"
                     : "border-white/5"
                 } ${
                   d.status === "perfect"

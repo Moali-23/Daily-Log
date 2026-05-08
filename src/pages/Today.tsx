@@ -128,12 +128,19 @@ export function TodayPage({ api }: { api: ReturnType<typeof useAppState> }) {
     <>
       {/* Hero */}
       <div className="grid md:grid-cols-[1.3fr_1fr] gap-4 mb-5">
-        <Card className="relative overflow-hidden p-5 sm:p-6">
+        <Card className="relative overflow-hidden p-5 sm:p-6 glass-lift">
           <div
-            className="absolute -top-24 -right-24 w-64 h-64 rounded-full opacity-30 blur-3xl"
+            className="absolute -top-24 -right-24 w-64 h-64 rounded-full opacity-40 blur-3xl"
             style={{
               background:
-                "radial-gradient(closest-side, rgba(34,211,238,0.6), transparent)",
+                "radial-gradient(closest-side, rgb(var(--accent) / 0.55), transparent)",
+            }}
+          />
+          <div
+            className="absolute -bottom-20 -left-12 w-56 h-56 rounded-full opacity-30 blur-3xl"
+            style={{
+              background:
+                "radial-gradient(closest-side, rgb(var(--accent-2) / 0.45), transparent)",
             }}
           />
           <div className="flex items-center gap-2 text-[10px] tracking-widest text-zinc-500 uppercase">
@@ -179,7 +186,7 @@ export function TodayPage({ api }: { api: ReturnType<typeof useAppState> }) {
               <XPBar value={intoLevel} max={perLevel} level={level} />
               <div className="flex items-center justify-between text-[11px] text-zinc-400">
                 <span>
-                  {rank.code} · <span className="text-cyan-300">{rank.title}</span>
+                  {rank.code} · <span className="text-accent">{rank.title}</span>
                 </span>
                 <span className="tabular text-amber-300">+{xpEarned} XP today</span>
               </div>
@@ -188,28 +195,29 @@ export function TodayPage({ api }: { api: ReturnType<typeof useAppState> }) {
         </Card>
 
         {/* Daily quests */}
-        <Card className="p-5">
-          <div className="flex items-center justify-between mb-2">
+        <Card className="p-5 glass-lift">
+          <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <span className="text-cyan-300">
+              <span className="text-accent">
                 <Sparkles size={14} />
               </span>
               <h3 className="text-[11px] tracking-[0.18em] uppercase text-zinc-400 font-semibold">
                 Daily Quests
               </h3>
             </div>
-            <span className="text-[11px] tabular text-zinc-300">
+            <span className="inline-flex items-center gap-1 text-[11px] tabular font-semibold text-accent bg-accent-soft border border-accent-soft rounded-full px-2 py-0.5">
               {questsDone}/{quests.length}
             </span>
           </div>
           <div className="space-y-2">
             {quests.map((q) => (
-              <div
+              <motion.div
                 key={q.id}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border ${
+                whileHover={{ x: 2 }}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border transition ${
                   q.done
-                    ? "bg-emerald-500/5 border-emerald-500/20"
-                    : "bg-white/[0.02] border-white/5"
+                    ? "bg-emerald-500/8 border-emerald-500/25 shadow-[0_0_18px_-8px_rgba(16,185,129,0.5)]"
+                    : "bg-white/[0.02] border-white/5 hover:bg-white/[0.04] hover:border-white/10"
                 }`}
               >
                 <span
@@ -220,7 +228,7 @@ export function TodayPage({ api }: { api: ReturnType<typeof useAppState> }) {
                   <CheckCircle2 size={18} />
                 </span>
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm text-zinc-100 leading-tight">
+                  <div className={`text-sm leading-tight ${q.done ? "text-emerald-100" : "text-zinc-100"}`}>
                     {q.title}
                   </div>
                   {q.progress && (
@@ -232,7 +240,7 @@ export function TodayPage({ api }: { api: ReturnType<typeof useAppState> }) {
                 <span className="text-[11px] font-semibold text-amber-300 tabular">
                   +{q.xp} XP
                 </span>
-              </div>
+              </motion.div>
             ))}
           </div>
         </Card>
@@ -363,8 +371,8 @@ export function TodayPage({ api }: { api: ReturnType<typeof useAppState> }) {
         );
       })}
 
-      <Card className="p-4 mb-2 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-cyan-500/15 grid place-items-center text-cyan-300">
+      <Card className="p-4 mb-2 flex items-center gap-3 glass-lift">
+        <div className="w-10 h-10 rounded-xl bg-accent-soft border border-accent-soft grid place-items-center text-accent shadow-accent">
           <TargetIcon size={18} />
         </div>
         <div className="flex-1 min-w-0">
