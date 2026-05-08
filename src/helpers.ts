@@ -65,6 +65,17 @@ export function getTasksForDate(state: AppState, date: string): Task[] {
   return [...state.defaultTasks, ...custom];
 }
 
+/**
+ * Decide if a task is user-added (and therefore removable) vs a core routine task.
+ * Belt-and-braces: prefer the explicit `isCustom` flag, but also treat any task
+ * whose ID is not in `defaultTasks` as custom (safety net for older records or
+ * tasks where the flag was lost during persistence).
+ */
+export function isCustomTask(task: Task, defaultTasks: Task[]): boolean {
+  if (task.isCustom === true) return true;
+  return !defaultTasks.some((d) => d.id === task.id);
+}
+
 export function ensureRecord(state: AppState, date: string): DailyRecord {
   return (
     state.records[date] ?? {

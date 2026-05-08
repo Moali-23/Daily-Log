@@ -19,6 +19,7 @@ import {
   categoryStats,
   getRank,
   getTasksForDate,
+  isCustomTask,
   prettyDate,
   quoteOfDay,
   totalXP,
@@ -475,23 +476,72 @@ export function EditRecordModal({
 }) {
   const { state, toggleTask, removeCustomTask, updateReview, addCustomTask } = api;
   const record = state.records[date];
-  const tasks = getTasksForDate(state, date);
+  const allTasks = getTasksForDate(state, date);
+  const defaults = state.defaultTasks;
+  const customTasks = allTasks.filter((t) => isCustomTask(t, defaults));
+  const routineTasks = allTasks.filter((t) => !isCustomTask(t, defaults));
   const review = record?.review ?? {};
   const [showAdd, setShowAdd] = useState(false);
 
   return (
     <Modal open={open} onClose={onClose} title={`Edit · ${prettyDate(date)}`} size="lg">
+      {/* Routine */}
+      <div className="flex items-center justify-between mb-2 px-1">
+        <h3 className="text-[11px] tracking-[0.18em] uppercase text-zinc-400 font-semibold">
+          Routine
+        </h3>
+        <span className="text-[11px] tabular text-zinc-500">
+          {routineTasks.filter((t) => record?.completions[t.id]).length}/
+          {routineTasks.length} done
+        </span>
+      </div>
       <div className="space-y-2">
-        {tasks.map((t) => (
+        {routineTasks.map((t) => (
           <TaskCard
             key={t.id}
             task={t}
             checked={!!record?.completions[t.id]}
             onToggle={() => toggleTask(date, t.id)}
-            onRemove={t.isCustom ? () => removeCustomTask(date, t.id) : undefined}
+            // No onRemove → core routine tasks cannot be deleted
           />
         ))}
       </div>
+
+      {/* Custom tasks */}
+      <div className="flex items-center justify-between mt-6 mb-2 px-1">
+        <h3 className="text-[11px] tracking-[0.18em] uppercase text-zinc-400 font-semibold inline-flex items-center gap-2">
+          <Sparkles size={12} className="text-accent" />
+          Your custom tasks
+        </h3>
+        <span className="text-[11px] tabular text-zinc-500">
+          {customTasks.length}
+        </span>
+      </div>
+
+      {customTasks.length > 0 ? (
+        <div className="space-y-2">
+          {customTasks.map((t) => (
+            <TaskCard
+              key={t.id}
+              task={t}
+              isCustom
+              checked={!!record?.completions[t.id]}
+              onToggle={() => toggleTask(date, t.id)}
+              onRemove={() => removeCustomTask(date, t.id)}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.015] px-4 py-5 text-center">
+          <div className="text-sm text-zinc-300">
+            No custom tasks yet for this day.
+          </div>
+          <div className="text-[12px] text-zinc-500 mt-1">
+            Add one below — anything you add will show a remove button next to
+            it.
+          </div>
+        </div>
+      )}
 
       <div className="mt-4">
         {showAdd ? (
