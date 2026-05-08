@@ -59,10 +59,38 @@ export function shortDate(iso: string): string {
 
 /* ---------- Tasks ---------- */
 
+/**
+ * Resolve the visible task list for a given date, applying:
+ *   1. globally-disabled default tasks (only for today + future)
+ *   2. per-day hidden task IDs
+ *   3. custom tasks added that day
+ *
+ * Past records keep their original task set so historical metrics
+ * stay stable when the user later prunes their routine.
+ */
 export function getTasksForDate(state: AppState, date: string): Task[] {
   const record = state.records[date];
-  const custom = record?.customTasks ?? [];
-  return [...state.defaultTasks, ...custom];
+  const isTodayOrFuture = date >= todayISO();
+
+  let defaults = state.defaultTasks;
+
+  if (isTodayOrFuture) {
+    const disabled = state.user.disabledDefaultTaskIds ?? [];
+    if (disabled.length > 0) {
+      defaults = defaults.filter((t) => !disabled.includes(t.id));
+    }
+  }
+
+  const hidden = record?.hiddenTaskIds ?? [];
+  if (hidden.length > 0) {
+    defaults = defaults.filter((t) => !hidden.includes(t.id));
+  }
+
+  const custom = (record?.customTasks ?? []).filter(
+    (t) => !hidden.includes(t.id)
+  );
+
+  return [...defaults, ...custom];
 }
 
 /**

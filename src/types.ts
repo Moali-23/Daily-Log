@@ -40,6 +40,8 @@ export interface DailyRecord {
   date: string; // YYYY-MM-DD
   completions: Record<string, boolean>; // taskId -> done
   customTasks?: Task[];
+  /** Default-task IDs the user removed from THIS day only. Per-record. */
+  hiddenTaskIds?: string[];
   review?: DailyReview;
 }
 
@@ -66,6 +68,12 @@ export interface UserProfile {
   reducedMotion: boolean;
   accent: "cyan" | "violet" | "emerald" | "amber" | "rose";
   cycleStartDate: string; // ISO date for D1 of workout cycle
+  /**
+   * Default-task IDs disabled in the user's routine going forward.
+   * Filtered out for today + future records only — past records keep
+   * their original task list intact.
+   */
+  disabledDefaultTaskIds?: string[];
 }
 
 export interface AppState {

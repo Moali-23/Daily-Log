@@ -272,6 +272,79 @@ export function useAppState(uid: string | null) {
     [updateRecord]
   );
 
+  /**
+   * Remove a default task from a single day. The task remains in the global
+   * routine for other days. Also clears any completion so XP recalculates.
+   */
+  const hideTaskForDay = useCallback(
+    (date: string, taskId: string) => {
+      updateRecord(date, (r) => {
+        const hidden = new Set(r.hiddenTaskIds ?? []);
+        hidden.add(taskId);
+        const completions = { ...r.completions };
+        delete completions[taskId];
+        return {
+          ...r,
+          completions,
+          hiddenTaskIds: Array.from(hidden),
+        };
+      });
+    },
+    [updateRecord]
+  );
+
+  /** Restore a task previously hidden on a single day. */
+  const restoreTaskForDay = useCallback(
+    (date: string, taskId: string) => {
+      updateRecord(date, (r) => ({
+        ...r,
+        hiddenTaskIds: (r.hiddenTaskIds ?? []).filter((id) => id !== taskId),
+      }));
+    },
+    [updateRecord]
+  );
+
+  /**
+   * Disable a default task globally (today + future). Past records remain
+   * untouched. Today's existing completion for the task is also cleared so
+   * progress reflects the new routine immediately.
+   */
+  const disableDefaultTask = useCallback(
+    (taskId: string) => {
+      const today = todayISO();
+      setState((s) => {
+        const disabled = new Set(s.user.disabledDefaultTaskIds ?? []);
+        disabled.add(taskId);
+        const records = { ...s.records };
+        const todayRec = records[today];
+        if (todayRec) {
+          const completions = { ...todayRec.completions };
+          delete completions[taskId];
+          records[today] = { ...todayRec, completions };
+        }
+        return {
+          ...s,
+          user: { ...s.user, disabledDefaultTaskIds: Array.from(disabled) },
+          records,
+        };
+      });
+    },
+    []
+  );
+
+  /** Re-enable a previously disabled default task. */
+  const restoreDefaultTask = useCallback((taskId: string) => {
+    setState((s) => ({
+      ...s,
+      user: {
+        ...s.user,
+        disabledDefaultTaskIds: (s.user.disabledDefaultTaskIds ?? []).filter(
+          (id) => id !== taskId
+        ),
+      },
+    }));
+  }, []);
+
   const updateReview = useCallback(
     (date: string, review: DailyRecord["review"]) => {
       updateRecord(date, (r) => ({ ...r, review: { ...(r.review ?? {}), ...review } }));
@@ -337,6 +410,10 @@ export function useAppState(uid: string | null) {
       setTaskComplete,
       addCustomTask,
       removeCustomTask,
+      hideTaskForDay,
+      restoreTaskForDay,
+      disableDefaultTask,
+      restoreDefaultTask,
       updateReview,
       updateUser,
       upsertGoal,
@@ -353,6 +430,10 @@ export function useAppState(uid: string | null) {
       setTaskComplete,
       addCustomTask,
       removeCustomTask,
+      hideTaskForDay,
+      restoreTaskForDay,
+      disableDefaultTask,
+      restoreDefaultTask,
       updateReview,
       updateUser,
       upsertGoal,

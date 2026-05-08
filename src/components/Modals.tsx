@@ -1,12 +1,16 @@
 import { AnimatePresence, motion } from "framer-motion";
 import {
   AlertTriangle,
+  Calendar as CalendarIcon,
   Check,
   Copy,
   Edit3,
   Quote,
+  RotateCcw,
+  Settings as SettingsIcon,
   Share2,
   Sparkles,
+  Trash2,
   X,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
@@ -22,6 +26,7 @@ import {
   isCustomTask,
   prettyDate,
   quoteOfDay,
+  todayISO,
   totalXP,
 } from "../helpers";
 import { useAppState } from "../state";
@@ -462,6 +467,122 @@ export function DailySummaryModal({
   );
 }
 
+/* ---------------- Task Remove Dialog ---------------- */
+/**
+ * Shows the right options for any task the user is trying to remove:
+ *   - Custom task → "Delete task"
+ *   - Default task today/future → "Remove from this day" + "Remove from routine"
+ *   - Default task past → "Remove from this day" only
+ *   - Prayer task → "Remove from this day" only (safer — prayer tracker assumes 5)
+ */
+export function TaskRemoveDialog({
+  task,
+  isCustom,
+  isPastDay,
+  onCancel,
+  onHideForDay,
+  onDisableFromRoutine,
+  onDeleteCustom,
+}: {
+  task: Task | null;
+  isCustom: boolean;
+  isPastDay: boolean;
+  onCancel: () => void;
+  onHideForDay: () => void;
+  onDisableFromRoutine: () => void;
+  onDeleteCustom: () => void;
+}) {
+  if (!task) return null;
+  const isPrayer = !!task.isPrayer;
+  const showRoutineRemoval = !isCustom && !isPrayer && !isPastDay;
+
+  return (
+    <Modal open={!!task} onClose={onCancel} hideHeader size="sm">
+      <div className="p-5 sm:p-6">
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 rounded-xl bg-rose-500/15 text-rose-300 border border-rose-500/30 grid place-items-center">
+            <Trash2 size={18} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-lg font-semibold text-zinc-100 leading-tight">
+              Remove "{task.title}"?
+            </h3>
+            <div className="mt-1.5 text-sm text-zinc-400 leading-snug">
+              {isCustom
+                ? "This task was added by you. Deleting it removes it from this day permanently."
+                : isPrayer
+                  ? "Prayer tasks can be removed from this day only — your routine still expects 5 daily prayers for streaks and quests."
+                  : isPastDay
+                    ? "Past records can only be edited per-day — removing here will only affect this date."
+                    : "Choose how far you want this removal to go. Past records won't be touched either way."}
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-5 space-y-2">
+          {isCustom ? (
+            <RemoveAction
+              tone="danger"
+              title="Delete task"
+              desc="Removes from this day. XP and progress recalculate immediately."
+              onClick={onDeleteCustom}
+            />
+          ) : (
+            <>
+              <RemoveAction
+                tone="danger"
+                title="Remove from this day"
+                desc="Hides the task from this day's record only."
+                onClick={onHideForDay}
+              />
+              {showRoutineRemoval && (
+                <RemoveAction
+                  tone="danger"
+                  title="Remove from routine"
+                  desc="Hides from today and every future day. Re-enable later in Settings → Routine."
+                  onClick={onDisableFromRoutine}
+                />
+              )}
+            </>
+          )}
+        </div>
+
+        <div className="mt-5 flex justify-end">
+          <Btn variant="ghost" onClick={onCancel}>
+            Cancel
+          </Btn>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+function RemoveAction({
+  tone,
+  title,
+  desc,
+  onClick,
+}: {
+  tone: "danger";
+  title: string;
+  desc: string;
+  onClick: () => void;
+}) {
+  const styles =
+    tone === "danger"
+      ? "bg-rose-500/8 hover:bg-rose-500/15 border-rose-500/25 hover:border-rose-500/45 text-rose-200"
+      : "";
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full text-left rounded-xl border ${styles} px-4 py-3 transition active:scale-[0.99]`}
+    >
+      <div className="font-semibold text-zinc-100 leading-tight">{title}</div>
+      <div className="text-[12px] text-zinc-400 mt-0.5 leading-snug">{desc}</div>
+    </button>
+  );
+}
+
 /* ---------------- Edit Record Modal ---------------- */
 export function EditRecordModal({
   date,
@@ -474,7 +595,17 @@ export function EditRecordModal({
   onClose: () => void;
   api: ReturnType<typeof useAppState>;
 }) {
-  const { state, toggleTask, removeCustomTask, updateReview, addCustomTask } = api;
+  const {
+    state,
+    toggleTask,
+    removeCustomTask,
+    hideTaskForDay,
+    restoreTaskForDay,
+    disableDefaultTask,
+    restoreDefaultTask,
+    updateReview,
+    addCustomTask,
+  } = api;
   const record = state.records[date];
   const allTasks = getTasksForDate(state, date);
   const defaults = state.defaultTasks;
@@ -482,12 +613,21 @@ export function EditRecordModal({
   const routineTasks = allTasks.filter((t) => !isCustomTask(t, defaults));
   const review = record?.review ?? {};
   const [showAdd, setShowAdd] = useState(false);
+  const [removeTarget, setRemoveTarget] = useState<Task | null>(null);
+  const isPastDay = date < todayISO();
+
+  // Lookups for restore sections
+  const hiddenTodayIds = record?.hiddenTaskIds ?? [];
+  const hiddenTodayTasks = defaults.filter((t) => hiddenTodayIds.includes(t.id));
+  const disabledIds = state.user.disabledDefaultTaskIds ?? [];
+  const disabledTasks = defaults.filter((t) => disabledIds.includes(t.id));
 
   return (
     <Modal open={open} onClose={onClose} title={`Edit · ${prettyDate(date)}`} size="lg">
       {/* Routine */}
       <div className="flex items-center justify-between mb-2 px-1">
-        <h3 className="text-[11px] tracking-[0.18em] uppercase text-zinc-400 font-semibold">
+        <h3 className="text-[11px] tracking-[0.18em] uppercase text-zinc-400 font-semibold inline-flex items-center gap-2">
+          <CalendarIcon size={12} />
           Routine
         </h3>
         <span className="text-[11px] tabular text-zinc-500">
@@ -502,10 +642,66 @@ export function EditRecordModal({
             task={t}
             checked={!!record?.completions[t.id]}
             onToggle={() => toggleTask(date, t.id)}
-            // No onRemove → core routine tasks cannot be deleted
+            onRequestRemove={() => setRemoveTarget(t)}
           />
         ))}
+        {routineTasks.length === 0 && (
+          <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.015] px-4 py-5 text-center text-sm text-zinc-400">
+            Your routine is empty for this day. Restore tasks from the sections
+            below or add custom tasks.
+          </div>
+        )}
       </div>
+
+      {/* Hidden on this day */}
+      {hiddenTodayTasks.length > 0 && (
+        <>
+          <div className="flex items-center justify-between mt-6 mb-2 px-1">
+            <h3 className="text-[11px] tracking-[0.18em] uppercase text-zinc-400 font-semibold inline-flex items-center gap-2">
+              <RotateCcw size={12} />
+              Hidden on this day
+            </h3>
+            <span className="text-[11px] tabular text-zinc-500">
+              {hiddenTodayTasks.length}
+            </span>
+          </div>
+          <div className="space-y-1.5">
+            {hiddenTodayTasks.map((t) => (
+              <RestoreRow
+                key={t.id}
+                title={t.title}
+                meta="Hidden from this day"
+                onRestore={() => restoreTaskForDay(date, t.id)}
+              />
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* Disabled in routine (global) */}
+      {disabledTasks.length > 0 && (
+        <>
+          <div className="flex items-center justify-between mt-6 mb-2 px-1">
+            <h3 className="text-[11px] tracking-[0.18em] uppercase text-zinc-400 font-semibold inline-flex items-center gap-2">
+              <SettingsIcon size={12} />
+              Disabled in routine
+            </h3>
+            <span className="text-[11px] tabular text-zinc-500">
+              {disabledTasks.length}
+            </span>
+          </div>
+          <div className="space-y-1.5">
+            {disabledTasks.map((t) => (
+              <RestoreRow
+                key={t.id}
+                title={t.title}
+                meta="Off across today + future"
+                onRestore={() => restoreDefaultTask(t.id)}
+              />
+            ))}
+          </div>
+        </>
+      )}
 
       {/* Custom tasks */}
       <div className="flex items-center justify-between mt-6 mb-2 px-1">
@@ -527,7 +723,7 @@ export function EditRecordModal({
               isCustom
               checked={!!record?.completions[t.id]}
               onToggle={() => toggleTask(date, t.id)}
-              onRemove={() => removeCustomTask(date, t.id)}
+              onRequestRemove={() => setRemoveTarget(t)}
             />
           ))}
         </div>
@@ -604,7 +800,52 @@ export function EditRecordModal({
           Save & close
         </Btn>
       </div>
+
+      <TaskRemoveDialog
+        task={removeTarget}
+        isCustom={!!removeTarget && isCustomTask(removeTarget, defaults)}
+        isPastDay={isPastDay}
+        onCancel={() => setRemoveTarget(null)}
+        onHideForDay={() => {
+          if (removeTarget) hideTaskForDay(date, removeTarget.id);
+          setRemoveTarget(null);
+        }}
+        onDisableFromRoutine={() => {
+          if (removeTarget) disableDefaultTask(removeTarget.id);
+          setRemoveTarget(null);
+        }}
+        onDeleteCustom={() => {
+          if (removeTarget) removeCustomTask(date, removeTarget.id);
+          setRemoveTarget(null);
+        }}
+      />
     </Modal>
+  );
+}
+
+function RestoreRow({
+  title,
+  meta,
+  onRestore,
+}: {
+  title: string;
+  meta: string;
+  onRestore: () => void;
+}) {
+  return (
+    <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.02] px-3 py-2">
+      <div className="min-w-0">
+        <div className="text-sm text-zinc-200 truncate">{title}</div>
+        <div className="text-[11px] text-zinc-500">{meta}</div>
+      </div>
+      <button
+        onClick={onRestore}
+        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold uppercase tracking-wider bg-accent-soft border border-accent-soft text-accent hover:brightness-110 transition active:scale-95"
+      >
+        <RotateCcw size={11} />
+        Restore
+      </button>
+    </div>
   );
 }
 

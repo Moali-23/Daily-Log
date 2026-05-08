@@ -1,6 +1,5 @@
-import { AnimatePresence, motion } from "framer-motion";
-import { Check, Clock, Trash2, X, Zap } from "lucide-react";
-import { useState } from "react";
+import { motion } from "framer-motion";
+import { Clock, Trash2, Zap } from "lucide-react";
 import { CATEGORIES } from "../constants";
 import type { Task } from "../types";
 import { Card, Checkbox, Tag } from "./UI";
@@ -9,26 +8,22 @@ export function TaskCard({
   task,
   checked,
   onToggle,
-  onRemove,
+  onRequestRemove,
   isCustom,
 }: {
   task: Task;
   checked: boolean;
   onToggle: (next: boolean) => void;
   /**
-   * If provided, a trash button is rendered. The parent decides whether this
-   * task should be removable — TaskCard does not gate on `task.isCustom` itself,
-   * because a task may have lost the flag during persistence.
+   * If provided, a trash button is rendered. The parent decides what dialog
+   * to open (per-day hide, global disable, or delete-custom) — TaskCard is
+   * dumb on purpose so it can't get into a half-confirmed inline state.
    */
-  onRemove?: () => void;
-  /**
-   * If true, the card gets a subtle "user-added" visual treatment (dashed
-   * accent stripe + Custom badge). Independent of `onRemove`.
-   */
+  onRequestRemove?: () => void;
+  /** Visual treatment for user-added tasks: dashed accent stripe + Custom tag. */
   isCustom?: boolean;
 }) {
   const cat = CATEGORIES[task.category];
-  const [confirming, setConfirming] = useState(false);
   const treatAsCustom = isCustom ?? task.isCustom === true;
 
   return (
@@ -46,7 +41,6 @@ export function TaskCard({
             : "hover:bg-white/[0.03] hover:border-white/10"
         }`}
       >
-        {/* accent stripe — dashed when custom */}
         <span
           aria-hidden
           className={`absolute left-0 top-3 bottom-3 w-[3px] rounded-r transition-opacity ${
@@ -123,55 +117,16 @@ export function TaskCard({
           </div>
         </div>
 
-        {/* Always-visible remove control — parent controls visibility via `onRemove`. */}
-        {onRemove && (
+        {onRequestRemove && (
           <div className="shrink-0 self-stretch flex items-center">
-            <AnimatePresence mode="wait" initial={false}>
-              {confirming ? (
-                <motion.div
-                  key="confirm"
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  transition={{ duration: 0.15 }}
-                  className="flex flex-col sm:flex-row items-center gap-1.5"
-                >
-                  <button
-                    onClick={() => {
-                      onRemove();
-                      setConfirming(false);
-                    }}
-                    className="w-9 h-9 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 border border-rose-500/40 grid place-items-center transition active:scale-95 shadow-[0_0_18px_-6px_rgba(244,63,94,0.6)]"
-                    aria-label={`Confirm remove ${task.title}`}
-                    title="Confirm delete"
-                  >
-                    <Check size={16} strokeWidth={2.5} />
-                  </button>
-                  <button
-                    onClick={() => setConfirming(false)}
-                    className="w-9 h-9 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-300 border border-white/10 grid place-items-center transition active:scale-95"
-                    aria-label="Cancel remove"
-                    title="Cancel"
-                  >
-                    <X size={16} strokeWidth={2.5} />
-                  </button>
-                </motion.div>
-              ) : (
-                <motion.button
-                  key="trash"
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  transition={{ duration: 0.15 }}
-                  onClick={() => setConfirming(true)}
-                  className="group w-9 h-9 rounded-lg bg-white/[0.04] hover:bg-rose-500/15 text-zinc-300 hover:text-rose-300 border border-white/10 hover:border-rose-500/40 grid place-items-center transition active:scale-95"
-                  aria-label={`Remove ${task.title}`}
-                  title="Remove task"
-                >
-                  <Trash2 size={15} strokeWidth={2} />
-                </motion.button>
-              )}
-            </AnimatePresence>
+            <button
+              onClick={onRequestRemove}
+              className="w-9 h-9 rounded-lg bg-white/[0.04] hover:bg-rose-500/15 text-zinc-300 hover:text-rose-300 border border-white/10 hover:border-rose-500/40 grid place-items-center transition active:scale-95"
+              aria-label={`Remove options for ${task.title}`}
+              title="Remove options"
+            >
+              <Trash2 size={15} strokeWidth={2} />
+            </button>
           </div>
         )}
       </Card>

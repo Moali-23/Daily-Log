@@ -1,4 +1,4 @@
-import { Check, CheckCircle2, Cloud, CloudOff, Download, LogOut, RefreshCw, Upload } from "lucide-react";
+import { Check, CheckCircle2, Cloud, CloudOff, Download, ListChecks, LogOut, RefreshCw, RotateCcw, Upload } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useAppState } from "../state";
 import { Btn, Card, SectionHeader } from "../components/UI";
@@ -22,7 +22,17 @@ export function SettingsPage({
   api: ReturnType<typeof useAppState>;
   authApi: AuthApi;
 }) {
-  const { state, updateUser, resetDemo, exportJSON, importJSON, syncing } = api;
+  const {
+    state,
+    updateUser,
+    resetDemo,
+    exportJSON,
+    importJSON,
+    syncing,
+    disableDefaultTask,
+    restoreDefaultTask,
+  } = api;
+  const disabledIds = new Set(state.user.disabledDefaultTaskIds ?? []);
   const [importMsg, setImportMsg] = useState("");
   const [confirmReset, setConfirmReset] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -200,6 +210,62 @@ export function SettingsPage({
               </span>
             </button>
           </Field>
+        </div>
+      </Card>
+
+      <SectionHeader title="Routine" />
+      <Card className="p-5 mb-5">
+        <div className="text-[11px] text-zinc-500 mb-4 leading-relaxed">
+          Toggle any default task off to remove it from your routine going
+          forward. Past records keep their original tasks intact. Prayer tasks
+          can be turned off here, but the prayer tracker still expects 5 daily
+          prayers for streaks and quests.
+        </div>
+        <div className="space-y-1.5">
+          {state.defaultTasks.map((t) => {
+            const isOff = disabledIds.has(t.id);
+            return (
+              <div
+                key={t.id}
+                className={`flex items-center justify-between rounded-xl border px-3 py-2 transition ${
+                  isOff
+                    ? "border-white/5 bg-white/[0.015] opacity-60"
+                    : "border-white/10 bg-white/[0.02]"
+                }`}
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm text-zinc-200 truncate">
+                    {t.title}
+                  </div>
+                  <div className="text-[11px] text-zinc-500 truncate">
+                    {t.category} · +{t.xp} XP
+                    {isOff && <span className="text-rose-300"> · disabled</span>}
+                  </div>
+                </div>
+                {isOff ? (
+                  <button
+                    onClick={() => restoreDefaultTask(t.id)}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold uppercase tracking-wider bg-accent-soft border border-accent-soft text-accent hover:brightness-110 transition active:scale-95"
+                  >
+                    <RotateCcw size={11} />
+                    Restore
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => disableDefaultTask(t.id)}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold uppercase tracking-wider bg-white/5 hover:bg-rose-500/15 border border-white/10 hover:border-rose-500/40 text-zinc-300 hover:text-rose-300 transition active:scale-95"
+                  >
+                    Disable
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        <div className="mt-4 inline-flex items-center gap-1.5 text-[11px] text-zinc-500">
+          <ListChecks size={11} />
+          {state.defaultTasks.length - disabledIds.size} of{" "}
+          {state.defaultTasks.length} routine tasks active
         </div>
       </Card>
 
